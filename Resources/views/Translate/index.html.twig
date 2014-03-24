@@ -49,6 +49,34 @@
                 })
             });
 
+            $('#clearCache').on('click', function (e) {
+                e.preventDefault();
+                $.ajax({
+                    type: 'POST',
+                    url: $(this).attr('href'),
+                    data: {
+                        '_method': 'POST'
+                    },
+                    beforeSend: function () {
+                        $(this).parent().children('.alert-message').remove();
+                    },
+                    error: function () {
+                        $(this).parent().append('<span class="label label-important alert-message">Cache NOT cleared.</span>');
+                    },
+                    success: function () {
+                        $(this).parent().append('<span class="label label-success alert-message">Cache cleared.</span>');
+                    },
+                    complete: function () {
+                        $(self).data('timeoutId', setTimeout(function () {
+                            $(self).data('timeoutId', undefined);
+                            $(this).parent().children('.alert-message').fadeOut(300, function () {
+                                $(this).remove();
+                            });
+                        }, 10000));
+                    }
+                })
+            });
+
             $('[data-transaltions-container] textarea')
                     .blur(function () {
                         var self = this;
