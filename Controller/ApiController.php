@@ -22,6 +22,12 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration as ControllerConfiguration;
 class ApiController
 {
     /**
+     * @var \Symfony\Component\HttpKernel\Kernel
+     * @DI\Inject("kernel")
+     */
+    protected $kernel;
+
+    /**
      * @var \JMS\TranslationBundle\Translation\ConfigFactory
      *
      * @DI\Inject("jms_translation.config_factory")
@@ -42,9 +48,9 @@ class ApiController
      * @param string  $locale
      *
      * @ControllerConfiguration\Route("/configs/{config}/domains/{domain}/locales/{locale}/messages",
-     * 			name="jms_translation_update_message",
-     * 			defaults = {"id" = null},
-     * 			options = {"i18n" = false})
+     *            name="jms_translation_update_message",
+     *            defaults = {"id" = null},
+     *            options = {"i18n" = false})
      * @ControllerConfiguration\Method("PUT")
      *
      * @return Response
@@ -59,13 +65,21 @@ class ApiController
 
         $files = FileUtils::findTranslationFiles($config->getTranslationsDir());
         if (!isset($files[$domain][$locale])) {
-            throw new RuntimeException(sprintf('There is no translation file for domain "%s" and locale "%s".', $domain, $locale));
+            throw new RuntimeException(sprintf(
+                'There is no translation file for domain "%s" and locale "%s".',
+                $domain,
+                $locale
+            ));
         }
 
         list($format, $file) = $files[$domain][$locale];
 
         $this->updater->updateTranslation(
-            $file, $format, $domain, $locale, $id,
+            $file,
+            $format,
+            $domain,
+            $locale,
+            $id,
             $request->request->get('message')
         );
 
@@ -117,6 +131,41 @@ class ApiController
             $id,
             $request->request->get('message')
         );
+
+        return new Response();
+    }
+
+
+    /**
+     * @param $locale
+     *
+     * @ControllerConfiguration\Route("/locales/{locale}/cache/clear/", name="jms_translation_clear_cache")
+     * @ControllerConfiguration\Method("POST")
+     *
+     * @return Response
+     * @throws \JMS\TranslationBundle\Exception\RuntimeException
+     */
+    public function clearCacheAction($locale)
+    {
+        $dir = $this->kernel->getCacheDir() . '/translations/';
+
+        $localeExploded = explode('_', $locale);
+        $localePattern  = sprintf('%s/catalogue.*%s*.php', $dir, $localeExploded[0]);
+        $files          = glob($localePattern);
+
+        $deleted = true;
+        foreach ($files as $file) {
+            if (!unlink($file)) {
+                $deleted = false;
+            }
+            $metadata = $file . '.meta';
+            if (file_exists($metadata)) {
+                unlink($metadata);
+            }
+        }
+        if (!$deleted) {
+            throw new RuntimeException;
+        }
 
         return new Response();
     }
