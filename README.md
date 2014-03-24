@@ -67,23 +67,6 @@ KASonataAdminJMSTranslationBundle_ui:
     prefix:   /admin/translations
 ```
 
-### Step 3: Import KASonataAdminJMSTranslationBundle routing
-
-In YAML somthing like:
-
-``` yaml
-# app/config/routing.yml
-
-admin:
-    resource: '@SonataAdminBundle/Resources/config/routing/sonata_admin.xml'
-    prefix: /admin
-
-KASonataAdminJMSTranslationBundle_ui:
-    resource: @KASonataAdminJMSTranslationBundle/Controller/
-    type:     annotation
-    prefix:   /admin/translations
-```
-
 ### Step 4: Override your Sonata Admin Layout
 
 a) Set configuration:
