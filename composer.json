@@ -1,0 +1,50 @@
+{
+    "name": "kluev-andrew/sonata-admin-jms-translations",
+    "description": "Add JMSTranslationBundle to SonataAdminBundle",
+    "keywords": ["translation", "jms", "sonata-admin", "multilanguage", "extract", "webinterface", "ui", "i18n", "extraction", "interface"],
+    "type": "symfony-bundle",
+    "license": "Apache2",
+    "authors": [
+        {
+            "name": "Kluev Andrew",
+            "email": "kluev.andrew@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "symfony/framework-bundle": "~2.1",
+        "nikic/php-parser": "0.9.4",
+        "symfony/console": "*",
+        "jms/translation-bundle": "dev-master",
+        "jms/di-extra-bundle": "dev-master",
+        "sonata-project/admin-bundle": "dev-master"
+    },
+    "conflict": {
+        "twig/twig": "1.10.2"
+    },
+    "require-dev": {
+        "symfony/twig-bundle": "*",
+        "symfony/browser-kit": "*",
+        "symfony/class-loader": "*",
+        "symfony/css-selector": "*",
+        "symfony/finder": "*",
+        "symfony/form": "*",
+        "symfony/validator": "*",
+        "symfony/security": "*",
+        "symfony/process": "*",
+        "symfony/yaml": "*",
+        "sensio/framework-extra-bundle": "*",
+        "jms/di-extra-bundle": ">=1.1"
+    },
+    "autoload": {
+        "psr-0": {
+            "KA\\SonataAdminJMSTranslationBundle": ""
+        }
+    },
+    "target-dir": "KA/SonataAdminJMSTranslationBundle",
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.1-dev"
+        }
+    }
+}

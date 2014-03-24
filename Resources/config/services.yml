@@ -1,0 +1,11 @@
+parameters:
+    ka_sonata_admin_jms_translation.updater.class: KA\SonataAdminJMSTranslationBundle\Translation\Updater
+
+services:
+     ka_sonata_admin_jms_translation.updater:
+        class: %ka_sonata_admin_jms_translation.updater.class%
+        arguments:
+            - @jms_translation.loader_manager
+            - @jms_translation.extractor_manager
+            - @logger
+            - @jms_translation.file_writer

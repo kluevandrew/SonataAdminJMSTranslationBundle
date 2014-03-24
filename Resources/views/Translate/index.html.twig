@@ -1,0 +1,193 @@
+{% extends base_template %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ asset("bundles/jmstranslation/css/layout.css") }}"/>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+
+    <script language="javascript" type="text/javascript">
+        $(document).ready(function () {
+            var updateMessagePath = {{ path("jms_translation_update_message", {"config": selectedConfig, "domain": selectedDomain, "locale": selectedLocale})|json_encode|raw }};
+
+            $('#config select').change(function () {
+                $(this).parent().submit();
+            });
+
+            {% if isWriteable is sameas(true) %}
+            $('#addTranslation').on('click', function (e) {
+                e.preventDefault();
+                var form = $(this).closest('form');
+                $.ajax({
+                    type: 'POST',
+                    headers: {'X-HTTP-METHOD-OVERRIDE': 'PUT'},
+                    url: form.attr('action'),
+                    data: {
+                        '_method': 'PUT',
+                        'message': form.find('#newTranslationMessage').val(),
+                        'id':      form.find('#newTranslationId').val()
+                    },
+                    beforeSend: function () {
+                        form.children('.alert-message').remove();
+                    },
+                    error: function () {
+                        form.append('<span class="label label-important alert-message">Could not be saved.</span>');
+                    },
+                    success: function () {
+                        form.append('<span class="label label-success alert-message">Translation was saved.</span>');
+                    },
+                    complete: function () {
+                        $(self).data('timeoutId', setTimeout(function () {
+                            $(self).data('timeoutId', undefined);
+                            form.children('.alert-message').fadeOut(300, function () {
+                                $(this).remove();
+                            });
+                        }, 10000));
+                    }
+                })
+            });
+
+            $('[data-transaltions-container] textarea')
+                    .blur(function () {
+                        var self = this;
+                        $.ajax(updateMessagePath + '?id=' + encodeURIComponent($(this).data('id')), {
+                            type: 'POST',
+                            headers: {'X-HTTP-METHOD-OVERRIDE': 'PUT'},
+                            data: {'_method': 'PUT', 'message': $(this).val()},
+                            beforeSend: function () {
+                                $(self).parent().closest('td').prev('td').children('.alert-message').remove();
+                            },
+                            error: function () {
+                                $(self).parent().closest('td').prev('td').append('<span class="label label-important alert-message">Could not be saved.</span>');
+                            },
+                            success: function () {
+                                $(self).parent().closest('td').prev('td').append('<span class="label label-success alert-message">Translation was saved.</span>');
+                            },
+                            complete: function () {
+                                var parent = $(self).parent();
+                                $(self).data('timeoutId', setTimeout(function () {
+                                    $(self).data('timeoutId', undefined);
+                                    parent.closest('td').prev('td').children('.alert-message').fadeOut(300, function () {
+                                        $(this).remove();
+                                    });
+                                }, 10000));
+                            }
+                        });
+                    })
+                    .focus(function () {
+                        this.select();
+
+                        var timeoutId = $(this).data('timeoutId');
+                        if (timeoutId) {
+                            clearTimeout(timeoutId);
+                            $(this).data('timeoutId', undefined);
+                        }
+
+                        $(this).parent().children('.alert-message').remove();
+                    })
+            ;
+            {% endif %}
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="span12">
+                <div data-transaltions-container class="well">
+                    <h4>{{ 'Translation filter'|trans }}</h4>
+                    <form id="config" class="form-inline sonata-no-margin" action="{{ path("jms_translation_index") }}" method="get">
+                        <label class="control-label" for="translation_configuration">{{ 'Bundle'|trans }}</label>
+                        <select id="translation_configuration" name="config" class="input">
+                            {% for config in configs %}
+                                <option value="{{ config }}"{% if config == selectedConfig %} selected="selected"{% endif %}>{{ config }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <label class="control-label" for="translation_domain">{{ 'Domain'|trans }}</label>
+                        <select id="translation_domain" name="domain" class="input">
+                            {% for domain in domains %}
+                                <option value="{{ domain }}"{% if domain == selectedDomain %} selected="selected"{% endif %}>{{ domain }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <label class="control-label" for="translation_locale">{{ 'Locale'|trans }}</label>
+                        <select id="translation_locale" name="locale" class="input">
+                            {% for locale in locales %}
+                                <option value="{{ locale }}"{% if locale == selectedLocale %} selected="selected"{% endif %}>{{ locale }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% if isWriteable is sameas(false) %}
+            <div class="row">
+                <div class="span12">
+                    <div class="alert alert-block alert-error">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        <h4>{{ 'Error!'|trans }}</h4>
+                        <p>{{ 'The translation file'|trans }} "<strong>{{ file }}</strong>" {{ 'is not writable'|trans }}.</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if "xliff" != format %}
+            <div class="row">
+                <div class="span12">
+                    <div class="alert alert-block alert-error">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        <h4>{{ 'Error!'|trans }}</h4>
+                        <p>
+                            Due to limitations of the different loaders/dumpers, some features are unfortunately limited to
+                            the XLIFF format.
+
+                            <br/><br/>
+
+                            However, you can easily convert your existing translation files to the XLIFF format by
+                            running:<br/>
+                            <code>php app/console translation:extract {{ selectedLocale }} --config={{ selectedConfig }}
+                                --output-format=xliff</code>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="row">
+            <div class="span9">
+                <div data-transaltions-container class="well">
+                    <h2 class="span12 text-center">Available Messages</h2>
+                    {% if newMessages is not empty %}
+                        <div>
+                            <h3>{{ 'New Messages'|trans }}</h3>
+                            {% include "KASonataAdminJMSTranslationBundle:Translate:messages.html.twig" with {"messages": newMessages} %}
+                        </div>
+                    {% endif %}
+                    {% if existingMessages is not empty %}
+                        <div class="">
+                            <h3>{{ 'Existing Messages'|trans }}</h3>
+                            {% include "KASonataAdminJMSTranslationBundle:Translate:messages.html.twig" with {"messages": existingMessages} %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="span3">
+                <div class="well">
+                    <h3>{{ 'New transaltion'|trans }}</h3>
+                    <form action="{{ path("jms_translation_create_message", {"config": selectedConfig, "domain": selectedDomain, "locale": selectedLocale}) }}" method="POST">
+                        <input id="newTranslationId" type="text" name="id" placeholder="{{ 'Translation ID'|trans }}"/>
+                        <textarea id="newTranslationMessage" placeholder="{{ 'Translation message'|trans }}" name="message" cols="30" rows="10"></textarea>
+                        {% if isWriteable is sameas(true) %}
+                            <input type="submit" class="btn btn-primary" id="addTranslation" value="{{ 'add'|trans }}"/>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
