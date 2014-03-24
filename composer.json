@@ -44,7 +44,7 @@
     "target-dir": "KA/SonataAdminJMSTranslationBundle",
     "extra": {
         "branch-alias": {
-            "dev-master": "1.1-dev"
+            "dev-master": "0.1-dev"
         }
     }
 }
