@@ -51,6 +51,7 @@
 
             $('#clearCache').on('click', function (e) {
                 e.preventDefault();
+                var btn = $(this);
                 $.ajax({
                     type: 'POST',
                     url: $(this).attr('href'),
@@ -58,13 +59,13 @@
                         '_method': 'POST'
                     },
                     beforeSend: function () {
-                        $(this).parent().children('.alert-message').remove();
+                        btn.parent().children('.alert-message').remove();
                     },
                     error: function () {
-                        $(this).parent().append('<span class="label label-important alert-message">Cache NOT cleared.</span>');
+                        btn.parent().append('<span class="label label-important alert-message">Cache NOT cleared.</span>');
                     },
                     success: function () {
-                        $(this).parent().append('<span class="label label-success alert-message">Cache cleared.</span>');
+                        btn.parent().append('<span class="label label-success alert-message">Cache cleared.</span>');
                     },
                     complete: function () {
                         $(self).data('timeoutId', setTimeout(function () {
