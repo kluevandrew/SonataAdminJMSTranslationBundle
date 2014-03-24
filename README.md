@@ -3,8 +3,11 @@ KASonataAdminJMSTranslationBundle
 
 Features:
 --------------
-- 1) Integrate JMSTranslationBundle with SonataAdminBundle
-- 2) Provides add translation message form
+- Integrate JMSTranslationBundle with SonataAdminBundle
+- Provides add translation message form
+
+Installation:
+--------------
 
 ### Step 1: Download KASonataAdminJMSTranslationBundle using composer
 
