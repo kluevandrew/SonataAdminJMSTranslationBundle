@@ -1,8 +1,8 @@
     <table class="table table-bordered table-hover">
         <thead>
             <tr>
-                <th width="20%">ID</th>
-                <th width="40%">Translation</th>
+                <th width="25%">ID</th>
+                <th width="75%">Translation</th>
             </tr>
         </thead>
         <tbody>
@@ -13,7 +13,7 @@
                     <p><abbr title="{{ id }}">{{ id|truncate(35) }}</abbr></p>
                 </td>
                 <td>
-                    <textarea style="width: 100%; height: 100%" data-id="{{ id }}" class="span6"{% if isWriteable is sameas(false) %} readonly="readonly"{% endif %}>{{ message.localeString }}</textarea>
+                    <textarea style="width: 100%; height: 100%; min-height: 80px" data-id="{{ id }}" class="span6"{% if isWriteable is sameas(false) %} readonly="readonly"{% endif %}>{{ message.localeString }}</textarea>
                     {% if message.meaning is not empty or lternativeMessages[id] is defined or message.sources|length > 0 or (message.desc is not empty
                     and message.localeString != message.desc
                     and id != message.desc
