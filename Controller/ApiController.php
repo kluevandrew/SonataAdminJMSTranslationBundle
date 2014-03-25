@@ -137,7 +137,7 @@ class ApiController
 
 
     /**
-     * @param $locale
+     * @param string $locale
      *
      * @ControllerConfiguration\Route("/locales/{locale}/cache/clear/", name="jms_translation_clear_cache")
      * @ControllerConfiguration\Method("POST")
@@ -166,6 +166,53 @@ class ApiController
         if (!$deleted) {
             throw new RuntimeException;
         }
+
+        return new Response();
+    }
+
+    /**
+     * @param Request $request
+     * @param string  $config
+     * @param string  $domain
+     * @param string  $locale
+     *
+     * @ControllerConfiguration\Route("/configs/{config}/domains/{domain}/locales/{locale}/messages/remove", name="jms_translation_remove_message")
+     * @ControllerConfiguration\Method("POST")
+     *
+     * @return Response
+     * @throws \InvalidArgumentException
+     * @throws \JMS\TranslationBundle\Exception\RuntimeException
+     */
+    public function removeMessageAction(Request $request, $config, $domain, $locale)
+    {
+        $id = $request->get('id');
+        if (!$id) {
+            throw new \InvalidArgumentException('Id can\'t be empty');
+        } else {
+            $id = urldecode($id);
+        }
+
+        /** @var \JMS\TranslationBundle\Translation\Config $config */
+        $config = $this->configFactory->getConfig($config, $locale);
+
+        $files = FileUtils::findTranslationFiles($config->getTranslationsDir());
+        if (!isset($files[$domain][$locale])) {
+            throw new RuntimeException(sprintf(
+                'There is no translation file for domain "%s" and locale "%s".',
+                $domain,
+                $locale
+            ));
+        }
+
+        list($format, $file) = $files[$domain][$locale];
+
+        $this->updater->removeTranslation(
+            $file,
+            $format,
+            $domain,
+            $locale,
+            $id
+        );
 
         return new Response();
     }

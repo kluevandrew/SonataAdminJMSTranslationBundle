@@ -6,6 +6,7 @@ Features:
 - Integrate JMSTranslationBundle with SonataAdminBundle
 - Provides add translation message form
 - Invalidate cache from web-interface
+- Remove translation from web-interface
 
 Installation:
 --------------

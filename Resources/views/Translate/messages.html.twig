@@ -7,10 +7,15 @@
         </thead>
         <tbody>
             {% for id, message in messages %}
-            <tr>
+            <tr class="translation-row">
                 <td>
                     <a class="jms-translation-anchor" id="{{ id }}" />
                     <p><abbr title="{{ id }}">{{ id|truncate(35) }}</abbr></p>
+                    <div>
+                        <a data-id="{{ id }}" class="btn btn-danger remove_translation" href="{{ path('jms_translation_remove_message', {"config": selectedConfig, "domain": selectedDomain, "locale": selectedLocale}) }}">
+                            {{ 'Remove'|trans }}
+                        </a>
+                    </div>
                 </td>
                 <td>
                     <textarea style="width: 100%; height: 100%; min-height: 80px" data-id="{{ id }}" class="span6"{% if isWriteable is sameas(false) %} readonly="readonly"{% endif %}>{{ message.localeString }}</textarea>

@@ -87,5 +87,29 @@ class Updater extends JMSUpdater
 
         $this->writer->write($catalogue, $domain, $file, $format);
     }
+
+    /**
+     * @param string $file
+     * @param string $format
+     * @param string $domain
+     * @param string $locale
+     * @param string $id
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function removeTranslation($file, $format, $domain, $locale, $id)
+    {
+        /** @var \JMS\TranslationBundle\Model\MessageCatalogue $catalogue */
+        $catalogue = $this->loader->loadFile($file, $format, $locale, $domain);
+
+        $messages = $catalogue->getDomain($domain)->all();
+        if (!isset($messages[$id])) {
+            throw new \InvalidArgumentException(sprintf('Message with id "%s" in domain "%s" not found.', $id, $domain));
+        }
+        unset($messages[$id]);
+        $catalogue->getDomain($domain)->replace($messages);
+
+        $this->writer->write($catalogue, $domain, $file, $format);
+    }
 }
  
