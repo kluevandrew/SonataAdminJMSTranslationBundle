@@ -19,11 +19,11 @@
                     and id != message.desc
                     and (alternativeMessages[id][sourceLanguage] is not defined
                     or alternativeMessages[id][sourceLanguage].localeString != message.desc)) %}
-                    <div class="additional_information">
+                    <div class="spoiler_block">
                         <div>
-                        <a class="show_additional_information" href="#additional_information_{{ id }}">{{ 'Additional Information'|trans }}</a>
+                        <a class="show_spoiler" href="#">{{ 'Additional Information'|trans }}</a>
                         </div>
-                        <div id="additional_information_{{ id }}" style="display: none">
+                        <div class="spoiler" style="display: none">
                             {% if message.meaning is not empty %}
                                 <h6>Meaning</h6>
                                 <p>{{ message.meaning }}</p>

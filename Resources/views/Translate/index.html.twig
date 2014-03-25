@@ -119,9 +119,9 @@
             ;
             {% endif %}
 
-            $('.show_additional_information').on('click', function () {
-                var btn = $(this);
-                var target = $(btn.attr('href'));
+            $('.show_spoiler').on('click', function () {
+                var block = $(this).closest('.spoiler_block');
+                var target = block.find('.spoiler');
                 target.slideToggle();
             })
         });
