@@ -13,7 +13,7 @@
             var updateMessagePath = {{ path("jms_translation_update_message", {"config": selectedConfig, "domain": selectedDomain, "locale": selectedLocale})|json_encode|raw }};
 
             $('#config select').change(function () {
-                $(this).parent().submit();
+                $(this).closest('form').submit();
             });
 
             {% if isWriteable is sameas(true) %}
@@ -163,8 +163,7 @@
             <div data-transaltions-container class="panel panel-default">
                 <div class="panel-heading">{{ 'Translation filter'|trans }}</div>
 
-                <form id="config" class="form-inline panel-body sonata-no-margin" role="form"
-                      action="{{ path("jms_translation_index") }}" method="get">
+                <form id="config" class="form-inline panel-body sonata-no-margin" role="form" action="{{ path("jms_translation_index") }}" method="get">
 
                     <div class="form-group">
                         <label for="translation_configuration">{{ 'Bundle'|trans }}</label>
