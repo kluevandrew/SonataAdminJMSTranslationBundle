@@ -1,4 +1,4 @@
-    <table class="table table-bordered table-hover">
+    <table class="table table-hover table-bordered  table-striped">
         <thead>
             <tr>
                 <th width="25%">ID</th>
@@ -18,17 +18,18 @@
                     </div>
                 </td>
                 <td>
-                    <textarea style="width: 100%; height: 100%; min-height: 80px" data-id="{{ id }}" class="span6"{% if isWriteable is sameas(false) %} readonly="readonly"{% endif %}>{{ message.localeString }}</textarea>
+                    <textarea data-id="{{ id }}" class="form-control" style="resize: vertical;" rows="5"{% if isWriteable is sameas(false) %} readonly="readonly"{% endif %}>{{ message.localeString }}</textarea>
                     {% if message.meaning is not empty or lternativeMessages[id] is defined or message.sources|length > 0 or (message.desc is not empty
                     and message.localeString != message.desc
                     and id != message.desc
                     and (alternativeMessages[id][sourceLanguage] is not defined
                     or alternativeMessages[id][sourceLanguage].localeString != message.desc)) %}
-                    <div class="spoiler_block">
+                    <div class="spoiler_block" style="margin-top: 5px">
                         <div>
-                        <a class="show_spoiler" href="#">{{ 'Additional Information'|trans }}</a>
+                        <a class="show_spoiler btn btn-info btn-xs" href="#">{{ 'Additional Information'|trans }}</a>
                         </div>
-                        <div class="spoiler" style="display: none">
+                        <div class="spoiler panel panel-info" style="display: none">
+                            <div class="panel-body">
                             {% if message.meaning is not empty %}
                                 <h6>Meaning</h6>
                                 <p>{{ message.meaning }}</p>
@@ -44,12 +45,12 @@
                             {% endif %}
 
                             {% if message.sources|length > 0 %}
-                                <h6>Sources</h6>
-                                <ul>
+                                <h6>{{ 'Sources'|trans }}</h6>
+                                <ol>
                                     {% for source in message.sources %}
                                         <li>{{ source }}</li>
                                     {% endfor %}
-                                </ul>
+                                </ol>
                             {% endif %}
 
                             {% if message.desc is not empty
@@ -60,6 +61,7 @@
                                 <h6>Description</h6>
                                 <p>{{ message.desc }}</p>
                             {% endif %}
+                            </div>
                         </div>
                     </div>
                     {% endif %}

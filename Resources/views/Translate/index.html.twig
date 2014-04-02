@@ -27,7 +27,7 @@
                     data: {
                         '_method': 'PUT',
                         'message': form.find('#newTranslationMessage').val(),
-                        'id':      form.find('#newTranslationId').val()
+                        'id': form.find('#newTranslationId').val()
                     },
                     beforeSend: function () {
                         form.children('.alert-message').remove();
@@ -138,7 +138,7 @@
                         },
                         success: function () {
                             btn.closest('.translation-row').fadeOut('slow', function () {
-                               $(this).remove();
+                                $(this).remove();
                             });
                         }
                     })
@@ -158,102 +158,135 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container">
-        <div class="row">
-            <div class="span10">
-                <div data-transaltions-container class="well">
-                    <h4>{{ 'Translation filter'|trans }}</h4>
-                    <form id="config" class="form-inline sonata-no-margin" action="{{ path("jms_translation_index") }}" method="get">
-                        <label class="control-label" for="translation_configuration">{{ 'Bundle'|trans }}</label>
-                        <select id="translation_configuration" name="config" class="input">
+    <div class="row">
+        <div class="col-md-10">
+            <div data-transaltions-container class="panel panel-default">
+                <div class="panel-heading">{{ 'Translation filter'|trans }}</div>
+
+                <form id="config" class="form-inline panel-body sonata-no-margin" role="form"
+                      action="{{ path("jms_translation_index") }}" method="get">
+
+                    <div class="form-group">
+                        <label for="translation_configuration">{{ 'Bundle'|trans }}</label>
+                        <select data-sonata-select2="false" id="translation_configuration" name="config"
+                                class="form-control">
                             {% for config in configs %}
                                 <option value="{{ config }}"{% if config == selectedConfig %} selected="selected"{% endif %}>{{ config }}</option>
                             {% endfor %}
                         </select>
+                    </div>
 
-                        <label class="control-label" for="translation_domain">{{ 'Domain'|trans }}</label>
-                        <select id="translation_domain" name="domain" class="input">
+                    <div class="form-group">
+                        <label for="translation_domain">{{ 'Domain'|trans }}</label>
+                        <select data-sonata-select2="false" id="translation_domain" name="domain" class="form-control">
                             {% for domain in domains %}
                                 <option value="{{ domain }}"{% if domain == selectedDomain %} selected="selected"{% endif %}>{{ domain }}</option>
                             {% endfor %}
                         </select>
+                    </div>
 
-                        <label class="control-label" for="translation_locale">{{ 'Locale'|trans }}</label>
-                        <select id="translation_locale" name="locale" class="input">
+                    <div class="form-group">
+                        <label for="translation_locale">{{ 'Locale'|trans }}</label>
+                        <select data-sonata-select2="false" id="translation_locale" name="locale" class="form-control">
                             {% for locale in locales %}
                                 <option value="{{ locale }}"{% if locale == selectedLocale %} selected="selected"{% endif %}>{{ locale }}</option>
                             {% endfor %}
                         </select>
-                    </form>
-                </div>
-            </div>
-            <div class="span2">
-                <a class="btn btn-danger" id="clearCache" href="{{ path('jms_translation_clear_cache', {"locale": selectedLocale}) }}">{{ 'Clear cache'|trans }}</a>
+                    </div>
+                </form>
             </div>
         </div>
-        {% if isWriteable is sameas(false) %}
-            <div class="row">
-                <div class="span12">
-                    <div class="alert alert-block alert-error">
-                        <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        <h4>{{ 'Error!'|trans }}</h4>
-                        <p>{{ 'The translation file'|trans }} "<strong>{{ file }}</strong>" {{ 'is not writable'|trans }}.</p>
-                    </div>
+        <div class="col-md-2">
+            <div class="panel panel-warning">
+                <div class="panel-heading">{{ 'Cache'|trans }}</div>
+                <div class="panel-body text-center">
+                    <a class="btn btn-danger" id="clearCache"
+                       href="{{ path('jms_translation_clear_cache', {"locale": selectedLocale}) }}">{{ 'Clear'|trans }}</a>
                 </div>
             </div>
-        {% endif %}
-
-        {% if "xliff" != format %}
-            <div class="row">
-                <div class="span12">
-                    <div class="alert alert-block alert-error">
-                        <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        <h4>{{ 'Error!'|trans }}</h4>
-                        <p>
-                            Due to limitations of the different loaders/dumpers, some features are unfortunately limited to
-                            the XLIFF format.
-
-                            <br/><br/>
-
-                            However, you can easily convert your existing translation files to the XLIFF format by
-                            running:<br/>
-                            <code>php app/console translation:extract {{ selectedLocale }} --config={{ selectedConfig }}
-                                --output-format=xliff</code>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-
+        </div>
+    </div>
+    {% if isWriteable is sameas(false) %}
         <div class="row">
-            <div class="span9">
-                <div data-transaltions-container class="well">
-                    <h2 class="span12 text-center">Available Messages</h2>
-                    {% if newMessages is not empty %}
-                        <div>
-                            <h3>{{ 'New Messages'|trans }}</h3>
+            <div class="col-md-12">
+                <div class="alert alert-block alert-danger">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <h4>{{ 'Error!'|trans }}</h4>
+
+                    <p>{{ 'The translation file'|trans }} "<strong>{{ file }}</strong>" {{ 'is not writable'|trans }}.
+                    </p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if "xliff" != format %}
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-block alert-danger">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <h4>{{ 'Error!'|trans }}</h4>
+
+                    <p>
+                        Due to limitations of the different loaders/dumpers, some features are unfortunately limited
+                        to
+                        the XLIFF format.
+
+                        <br/><br/>
+
+                        However, you can easily convert your existing translation files to the XLIFF format by
+                        running:<br/>
+                        <code>php app/console translation:extract {{ selectedLocale }} --config={{ selectedConfig }}
+                            --output-format=xliff</code>
+                    </p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-9">
+            <div data-transaltions-container class="">
+                {% if newMessages is not empty %}
+                    <div class="panel panel-default">
+                        <div class="panel-heading">{{ 'New Messages'|trans }}</div>
+                        <div class="panel-body">
                             {% include "KASonataAdminJMSTranslationBundle:Translate:messages.html.twig" with {"messages": newMessages} %}
                         </div>
-                    {% endif %}
-                    {% if existingMessages is not empty %}
-                        <div class="">
-                            <h3>{{ 'Existing Messages'|trans }}</h3>
-                            {% include "KASonataAdminJMSTranslationBundle:Translate:messages.html.twig" with {"messages": existingMessages} %}
+                    </div>
+                {% endif %}
+                {% if existingMessages is not empty %}
+                    <div class="panel panel-default">
+                        <div class="panel-heading">{{ 'Existing Messages'|trans }}</div>
+                        <div class="panel-body">
+                        {% include "KASonataAdminJMSTranslationBundle:Translate:messages.html.twig" with {"messages": existingMessages} %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">{{ 'New transaltion'|trans }}</div>
+
+                <form class="form panel-body"
+                      action="{{ path("jms_translation_create_message", {"config": selectedConfig, "domain": selectedDomain, "locale": selectedLocale}) }}"
+                      method="POST">
+                    <div class="form-group">
+                        <input id="newTranslationId" type="text" class="form-control" name="id"
+                               placeholder="{{ 'Translation ID'|trans }}"/>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="newTranslationMessage" placeholder="{{ 'Translation message'|trans }}"
+                                  name="message"
+                                  class="form-control" style="resize: vertical;" rows="10"></textarea>
+                    </div>
+                    {% if isWriteable is sameas(true) %}
+                        <div class="form-group">
+                            <input type="submit" class="btn btn-primary" id="addTranslation" value="{{ 'add'|trans }}"/>
                         </div>
                     {% endif %}
-                </div>
-            </div>
-            <div class="span3">
-                <div class="well">
-                    <h3>{{ 'New transaltion'|trans }}</h3>
-                    <form action="{{ path("jms_translation_create_message", {"config": selectedConfig, "domain": selectedDomain, "locale": selectedLocale}) }}" method="POST">
-                        <input id="newTranslationId" type="text" name="id" placeholder="{{ 'Translation ID'|trans }}"/>
-                        <textarea id="newTranslationMessage" placeholder="{{ 'Translation message'|trans }}" name="message" cols="30" rows="10"></textarea>
-                        {% if isWriteable is sameas(true) %}
-                            <input type="submit" class="btn btn-primary" id="addTranslation" value="{{ 'add'|trans }}"/>
-                        {% endif %}
-                    </form>
-                </div>
+                </form>
             </div>
         </div>
     </div>
