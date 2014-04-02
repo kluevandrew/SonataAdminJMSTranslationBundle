@@ -17,7 +17,7 @@
         "symfony/console": "*",
         "jms/translation-bundle": "dev-master",
         "jms/di-extra-bundle": "dev-master",
-        "sonata-project/admin-bundle": "dev-master"
+        "sonata-project/admin-bundle": "~2.2.*@dev"
     },
     "conflict": {
         "twig/twig": "1.10.2"
@@ -32,7 +32,7 @@
     "target-dir": "KA/SonataAdminJMSTranslationBundle",
     "extra": {
         "branch-alias": {
-            "dev-master": "0.1-dev"
+            "dev-master": "2.2-dev"
         }
     }
 }
