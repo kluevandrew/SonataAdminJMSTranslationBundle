@@ -159,7 +159,7 @@
 
 {% block content %}
     <div class="row">
-        <div class="col-md-10">
+        <div class="col-md-{% if isWriteable is sameas(true) %}10{% else %}12{% endif %}">
             <div data-transaltions-container class="panel panel-default">
                 <div class="panel-heading">{{ 'Translation filter'|trans }}</div>
 
@@ -196,15 +196,18 @@
                 </form>
             </div>
         </div>
+        {% if isWriteable is sameas(true) %}
         <div class="col-md-2">
             <div class="panel panel-warning">
                 <div class="panel-heading">{{ 'Cache'|trans }}</div>
                 <div class="panel-body text-center">
+
                     <a class="btn btn-danger" id="clearCache"
                        href="{{ path('jms_translation_clear_cache', {"locale": selectedLocale}) }}">{{ 'Clear'|trans }}</a>
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
     {% if isWriteable is sameas(false) %}
         <div class="row">
@@ -273,11 +276,11 @@
                       action="{{ path("jms_translation_create_message", {"config": selectedConfig, "domain": selectedDomain, "locale": selectedLocale}) }}"
                       method="POST">
                     <div class="form-group">
-                        <input id="newTranslationId" type="text" class="form-control" name="id"
+                        <input {% if isWriteable is sameas(false) %}disabled="disabled"{% endif %} id="newTranslationId" type="text" class="form-control" name="id"
                                placeholder="{{ 'Translation ID'|trans }}"/>
                     </div>
                     <div class="form-group">
-                        <textarea id="newTranslationMessage" placeholder="{{ 'Translation message'|trans }}"
+                        <textarea {% if isWriteable is sameas(false) %}readonly="readonly"{% endif %} id="newTranslationMessage" placeholder="{{ 'Translation message'|trans }}"
                                   name="message"
                                   class="form-control" style="resize: vertical;" rows="10"></textarea>
                     </div>
