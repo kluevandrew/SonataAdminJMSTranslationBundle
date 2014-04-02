@@ -15,10 +15,20 @@ Installation:
 
 Add KASonataAdminJMSTranslationBundle in your composer.json:
 
+
+#### For Sonata admin <=2.2 use:
 ```js
 {
     "require": {
         "kluev-andrew/sonata-admin-jms-translations": "dev-master"
+    }
+}
+```
+#### For Sonata admin >=2.3 use:
+```js
+{
+    "require": {
+        "kluev-andrew/sonata-admin-jms-translations": ">=2.3"
     }
 }
 ```
