@@ -18,7 +18,8 @@
                     </div>
                 </td>
                 <td>
-                    <textarea data-id="{{ id }}" class="form-control" style="resize: vertical;" rows="5"{% if isWriteable is sameas(false) %} readonly="readonly"{% endif %}>{{ message.localeString }}</textarea>
+                    <textarea tabindex="{{ tabIndex }}" data-id="{{ id }}" class="form-control" style="resize: vertical;" rows="5"{% if isWriteable is sameas(false) %} readonly="readonly"{% endif %}>{{ message.localeString }}</textarea>
+                    {% set tabIndex = tabIndex + 1 %}
                     {% if message.meaning is not empty or lternativeMessages[id] is defined or message.sources|length > 0 or (message.desc is not empty
                     and message.localeString != message.desc
                     and id != message.desc

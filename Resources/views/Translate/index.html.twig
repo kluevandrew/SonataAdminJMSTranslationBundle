@@ -105,7 +105,8 @@
                             }
                         });
                     })
-                    .focus(function () {
+                    .focus(function (e) {
+                        e.preventDefault();
                         this.select();
 
                         var timeoutId = $(this).data('timeoutId');
@@ -115,8 +116,15 @@
                         }
 
                         $(this).parent().children('.alert-message').remove();
-                    })
-            ;
+                    }).mouseup(function(e){
+                        e.preventDefault();
+                    }).keyup(function(e){
+                        if (e.keyCode == 9) {
+                            //Tab key
+                            e.preventDefault();
+                            this.select();
+                        }
+                    });
 
             $('.remove_translation').on('click', function (e) {
                 e.preventDefault();
@@ -253,7 +261,7 @@
                     <div class="panel panel-default">
                         <div class="panel-heading">{{ 'New Messages'|trans }}</div>
                         <div class="panel-body">
-                            {% include "KASonataAdminJMSTranslationBundle:Translate:messages.html.twig" with {"messages": newMessages} %}
+                            {% include "KASonataAdminJMSTranslationBundle:Translate:messages.html.twig" with {"messages": newMessages, "tabIndex": 1} %}
                         </div>
                     </div>
                 {% endif %}
@@ -261,7 +269,7 @@
                     <div class="panel panel-default">
                         <div class="panel-heading">{{ 'Existing Messages'|trans }}</div>
                         <div class="panel-body">
-                        {% include "KASonataAdminJMSTranslationBundle:Translate:messages.html.twig" with {"messages": existingMessages} %}
+                            {% include "KASonataAdminJMSTranslationBundle:Translate:messages.html.twig" with {"messages": existingMessages, "tabIndex": newMessages|length + 1} %}
                         </div>
                     </div>
                 {% endif %}
