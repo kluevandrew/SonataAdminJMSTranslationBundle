@@ -144,7 +144,6 @@ class TranslateController
             'admin_pool'          => $this->container->get('sonata.admin.pool'),
             'blocks'              => $this->container->getParameter('sonata.admin.configuration.dashboard_blocks'),
             'config'              => $this->configFactory->getConfig($config, $locale),
-            'remote_repo'         => $this->container->getParameter('ka_sonata_admin_jms_translation.remote_repository.address'),
         ];
     }
 
