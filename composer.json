@@ -23,12 +23,6 @@
     "conflict": {
         "twig/twig": "1.10.2"
     },
-    "require-dev": {
-        "kzykhys/git": "dev-master"
-    },
-    "suggest": {
-        "kzykhys/git": "Allows for GIT version control."
-    },
     "autoload": {
         "psr-0": {
             "KA\\SonataAdminJMSTranslationBundle": ""

@@ -18,12 +18,6 @@ class Configuration implements ConfigurationInterface
         $treeBuilder = new TreeBuilder();
         $rootNode    = $treeBuilder->root('ka_sonata_admin_jms_translation');
 
-        $rootNode->children()->arrayNode('remote_repository')
-            ->children()
-            ->scalarNode('address')->isRequired()->end()
-            ->scalarNode('password')->isRequired()->end();
-
-
         // Here you should define the parameters that are allowed to
         // configure your bundle. See the documentation linked above for
         // more information on that topic.

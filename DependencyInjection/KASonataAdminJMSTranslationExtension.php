@@ -22,14 +22,5 @@ class KASonataAdminJMSTranslationExtension extends Extension
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');
-
-        $remoteRepoAddress = null;
-        $remoteRepoPassword = null;
-        if (isset($config['remote_repository'])) {
-            $remoteRepoAddress = $config['remote_repository']['address'];
-            $remoteRepoPassword = $config['remote_repository']['password'];
-        }
-        $container->setParameter('ka_sonata_admin_jms_translation.remote_repository.address', $remoteRepoAddress);
-        $container->setParameter('ka_sonata_admin_jms_translation.remote_repository.password', $remoteRepoPassword);
     }
 }

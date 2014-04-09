@@ -177,9 +177,6 @@ class TranslateController
         $config = $builder->setLocale('any')->getConfig();
         $directory = $config->getTranslationsDir();
 
-        $remoteAddress = $this->container->getParameter('ka_sonata_admin_jms_translation.remote_repository.address');
-        $remotePassword = $this->container->getParameter('ka_sonata_admin_jms_translation.remote_repository.password');
-
         switch ($command) {
             case 'init':
                 if (!$manager->init($directory)) {
@@ -251,20 +248,14 @@ class TranslateController
                     throw new \RuntimeException('An error occurred while exec git merge.');
                 }
                 break;
-            case 'push':
-                if (!$remoteAddress) {
-                    throw new \RuntimeException('Remote repo not exists.');
-                }
-                if (!$manager->push($directory, $remoteAddress, $remotePassword)) {
-                    throw new \RuntimeException('An error occurred while exec git push.');
-                }
-                break;
             default:
                 throw new \InvalidArgumentException('Unknown command');
         }
 
         return new RedirectResponse($request->headers->get('referer'));
     }
+
+
 
     /**
      * @param Request $request

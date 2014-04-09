@@ -408,18 +408,6 @@
                                     <input type="submit" class="btn btn-danger btn-xs" value="{{ 'Reset'|trans }}"/>
                                 </form>
                             </div>
-
-                            {% if remote_repo %}
-                                <div class="panel panel-default">
-                                    <div class="panel-heading">{{ 'Remote repository'|trans }} ({{ remote_repo }})</div>
-                                    <div class="panel-body text-center">
-                                        <div class="btn-group">
-                                            <a class="btn btn-success" href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'pull' }) }}">{{ 'Pull from remote'|trans }}</a>
-                                            <a class="btn btn-warning" href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'push' }) }}">{{ 'Push to remote'|trans }}</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endif %}
                         {% else %}
                             <p>{{ 'Git repository not initialized'|trans }}</p>
                             <a class="btn btn-primary"
