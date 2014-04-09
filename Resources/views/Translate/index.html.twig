@@ -116,9 +116,9 @@
                         }
 
                         $(this).parent().children('.alert-message').remove();
-                    }).mouseup(function(e){
+                    }).mouseup(function (e) {
                         e.preventDefault();
-                    }).keyup(function(e){
+                    }).keyup(function (e) {
                         if (e.keyCode == 9) {
                             //Tab key
                             e.preventDefault();
@@ -171,7 +171,8 @@
             <div data-transaltions-container class="panel panel-default">
                 <div class="panel-heading">{{ 'Translation filter'|trans }}</div>
 
-                <form id="config" class="form-inline panel-body sonata-no-margin" role="form" action="{{ path("jms_translation_index") }}" method="get">
+                <form id="config" class="form-inline panel-body sonata-no-margin" role="form"
+                      action="{{ path("jms_translation_index") }}" method="get">
 
                     <div class="form-group">
                         <label for="translation_configuration">{{ 'Bundle'|trans }}</label>
@@ -204,16 +205,16 @@
             </div>
         </div>
         {% if isWriteable is sameas(true) %}
-        <div class="col-md-2">
-            <div class="panel panel-warning">
-                <div class="panel-heading">{{ 'Cache'|trans }}</div>
-                <div class="panel-body text-center">
+            <div class="col-md-2">
+                <div class="panel panel-warning">
+                    <div class="panel-heading">{{ 'Cache'|trans }}</div>
+                    <div class="panel-body text-center">
 
-                    <a class="btn btn-danger" id="clearCache"
-                       href="{{ path('jms_translation_clear_cache', {"locale": selectedLocale}) }}">{{ 'Clear'|trans }}</a>
+                        <a class="btn btn-danger" id="clearCache"
+                           href="{{ path('jms_translation_clear_cache', {"locale": selectedLocale}) }}">{{ 'Clear'|trans }}</a>
+                    </div>
                 </div>
             </div>
-        </div>
         {% endif %}
     </div>
     {% if isWriteable is sameas(false) %}
@@ -283,11 +284,13 @@
                       action="{{ path("jms_translation_create_message", {"config": selectedConfig, "domain": selectedDomain, "locale": selectedLocale}) }}"
                       method="POST">
                     <div class="form-group">
-                        <input {% if isWriteable is sameas(false) %}disabled="disabled"{% endif %} id="newTranslationId" type="text" class="form-control" name="id"
+                        <input {% if isWriteable is sameas(false) %}disabled="disabled"{% endif %} id="newTranslationId"
+                               type="text" class="form-control" name="id"
                                placeholder="{{ 'Translation ID'|trans }}"/>
                     </div>
                     <div class="form-group">
-                        <textarea {% if isWriteable is sameas(false) %}readonly="readonly"{% endif %} id="newTranslationMessage" placeholder="{{ 'Translation message'|trans }}"
+                        <textarea {% if isWriteable is sameas(false) %}readonly="readonly"{% endif %}
+                                  id="newTranslationMessage" placeholder="{{ 'Translation message'|trans }}"
                                   name="message"
                                   class="form-control" style="resize: vertical;" rows="10"></textarea>
                     </div>
@@ -298,6 +301,134 @@
                     {% endif %}
                 </form>
             </div>
+
+            {% if is_granted('ROLE_SUPER_ADMIN') and ka_is_git_available() %}
+                {% set currentDir = config.getTranslationsDir %}
+                <div class="panel panel-default">
+                    <div class="panel-heading">GIT: {{ ka_is_git_version() }}</div>
+                    <div class="panel-body">
+                        {% if ka_is_git_initialized(currentDir) %}
+
+                            {% set modified_files = ka_git_status(currentDir, {0: '-s'}, true) %}
+                            {% set currentBranch = ka_is_git_current_branch(currentDir) %}
+
+                            <div class="panel panel-default">
+                                <div class="panel-heading">{{ 'Modified files'|trans }} ({{ currentBranch }})</div>
+                                <div class="panel-body">
+                                    {% if modified_files|length %}
+                                        <ol>
+                                            {% for line in modified_files %}
+                                                <li>{{ line }}</li>
+                                            {% endfor %}
+                                        </ol>
+                                    {% else %}
+                                        <p>{{ 'Working directory clean'|trans }}</p>
+                                    {% endif %}
+                                </div>
+                                {% if modified_files|length %}
+                                    <div class="panel-footer">
+                                        <form class="form"
+                                              action="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'commit'}) }}">
+                                            <div class="form-group">
+                                                <label for="commit_message">{{ 'Message' }}</label>
+                                                <textarea class="form-control" name="commit_message" id="commit_message"
+                                                          cols="30" rows="3"></textarea>
+                                            </div>
+                                            <input type="submit" class="btn btn-warning btn-xs"
+                                                   value="{{ 'Commit'|trans }}"/>
+                                            <a href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'reset', 'to': 'HEAD', 'options': {0: '--hard'} }) }}" class="btn btn-xs btn-danger">{{ 'Reset'|trans }}</a>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            {% set branches = ka_git_branch_list(currentDir) %}
+                            <div class="panel panel-default">
+                                <div class="panel-heading">{{ 'Branches'|trans }}</div>
+                                    <table class="table">
+                                        {% for branch in branches %}
+                                        <tr>
+                                            <td {% if currentBranch == branch %}class="text-success" colspan="2"{% endif %}>
+                                                {% if not modified_files|length and currentBranch != branch %}
+                                                <a title="{{ 'Checkout'|trans }}" href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'checkout', 'branch': branch}) }}"
+                                                        >{{ branch }}</a>
+                                                {% else %}
+                                                    {{ branch }}
+                                                {% endif %}
+                                            </td>
+                                            {% if currentBranch != branch %}
+                                                <td class="text-right">
+                                                    {% if modified_files|length %}
+                                                        <button disabled class="btn btn-xs btn-default">{{ 'checkout'|trans }}</button>
+                                                    {% else %}
+                                                        <a href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'checkout', 'branch': branch}) }}" class="btn btn-xs btn-success">{{ 'Checkout'|trans }}</a>
+                                                    {% endif %}
+                                                    {% if ka_is_git_diff(currentDir, currentBranch, branch) %}
+                                                        <a href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'merge', 'revision1': currentBranch, 'revision2': branch }) }}" class="btn btn-xs btn-warning">{{ 'Merge'|trans }}</a>
+                                                    {% endif %}
+                                                    <a href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'branch', 'branch': branch, 'options': {0: '-D'} }) }}" class="btn btn-xs btn-danger">{{ 'Remove'|trans }}</a>
+                                                </td>
+                                            {% endif %}
+                                        </tr>
+                                        {% endfor %}
+                                        <tr>
+                                            <td colspan="2">
+                                                <div class="spoiler_block">
+                                                    <div>
+                                                        <a class="show_spoiler btn btn-info btn-xs" href="#">{{ 'Create branch'|trans }}</a>
+                                                    </div>
+                                                    <form class="form spoiler"  style="display: none;" action="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'branch' }) }}">
+                                                        <div class="form-group">
+                                                            <label for="branch_name">{{ 'Branch name'|trans }}</label>
+                                                            <input class="form-control" type="text" id="branch_name" name="branch"/>
+                                                        </div>
+                                                        <input type="submit" class="btn btn-primary btn-xs" value="{{ 'Create' }}"/>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                            </div>
+
+                            {% set history = ka_is_git_history(currentDir) %}
+                            <div class="panel panel-danger">
+                                <div class="panel-heading">{{ 'Rollback'|trans }} ({{ currentBranch }})</div>
+                                <form class="form form-inline panel-body"
+                                      action="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'reset' }) }}"
+                                        >
+                                    <input type="hidden" name="options[]" value="--hard"/>
+                                    <div class="form-group">
+                                        <label for="revision">{{ 'Revision'|trans }}</label>
+                                        <select name="to" id="revision">
+                                            {% for hash, text in history %}
+                                                <option value="{{ hash }}">{{ text }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <input type="submit" class="btn btn-danger btn-xs" value="{{ 'Reset'|trans }}"/>
+                                </form>
+                            </div>
+
+                            {% if remote_repo %}
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">{{ 'Remote repository'|trans }} ({{ remote_repo }})</div>
+                                    <div class="panel-body text-center">
+                                        <div class="btn-group">
+                                            <a class="btn btn-success" href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'pull' }) }}">{{ 'Pull from remote'|trans }}</a>
+                                            <a class="btn btn-warning" href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'push' }) }}">{{ 'Push to remote'|trans }}</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <p>{{ 'Git repository not initialized'|trans }}</p>
+                            <a class="btn btn-primary"
+                               href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'init' }) }}"
+                                    >{{ 'Initialize git repository'|trans }}</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
 {% endblock %}

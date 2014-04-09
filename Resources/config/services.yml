@@ -1,5 +1,7 @@
 parameters:
     ka_sonata_admin_jms_translation.updater.class: KA\SonataAdminJMSTranslationBundle\Translation\Updater
+    ka_sonata_admin_jms_translation.twig.git.class: KA\SonataAdminJMSTranslationBundle\Twig\GitExtension
+    ka_sonata_admin_jms_translation.git.manager.class: KA\SonataAdminJMSTranslationBundle\Git\Manager
 
 services:
      ka_sonata_admin_jms_translation.updater:
@@ -9,3 +11,15 @@ services:
             - @jms_translation.extractor_manager
             - @logger
             - @jms_translation.file_writer
+
+     ka_sonata_admin_jms_translation.twig.git:
+        class: %ka_sonata_admin_jms_translation.twig.git.class%
+        arguments:
+            - @ka_sonata_admin_jms_translation.git.manager
+        tags:
+            - { name: twig.extension }
+
+     ka_sonata_admin_jms_translation.git.manager:
+        class: %ka_sonata_admin_jms_translation.git.manager.class%
+        arguments:
+            - @security.context

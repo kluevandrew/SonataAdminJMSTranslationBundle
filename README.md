@@ -98,10 +98,15 @@ b) Create template
 
 {% extends 'SonataAdminBundle::standard_layout.html.twig' %}
 
-{% block top_bar_after_nav %}
-    <li>
-        <a href="{{ path('jms_translation_index') }}">JMSTranslations</a>
-    </li>
+{% block side_bar_after_nav %}
+    <ul class="sidebar-menu">
+        <li>
+            <a href="{{ path('jms_translation_index') }}">
+                <i class="fa fa-angle-double-right"></i>
+                <span>JMSTranslations</span>
+            </a>
+        </li>
+    </ul>
 {% endblock %}
 ```
 

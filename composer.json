@@ -17,12 +17,17 @@
         "symfony/console": "*",
         "jms/translation-bundle": "dev-master",
         "jms/di-extra-bundle": "dev-master",
-        "sonata-project/admin-bundle": "2.3.*@dev"
+        "sonata-project/admin-bundle": "2.3.*@dev",
+        "sensio/framework-extra-bundle": "~3.0",
     },
     "conflict": {
         "twig/twig": "1.10.2"
     },
     "require-dev": {
+        "kbjr/Git.php": "dev-master"
+    },
+    "suggest": {
+        "kbjr/Git.php": "Allows for GIT version control."
     },
     "autoload": {
         "psr-0": {
