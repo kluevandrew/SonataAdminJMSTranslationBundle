@@ -24,10 +24,10 @@
         "twig/twig": "1.10.2"
     },
     "require-dev": {
-        "kbjr/Git.php": "dev-master"
+        "kzykhys/git": "dev-master"
     },
     "suggest": {
-        "kbjr/Git.php": "Allows for GIT version control."
+        "kzykhys/git": "Allows for GIT version control."
     },
     "autoload": {
         "psr-0": {
