@@ -9,12 +9,15 @@
  */
 namespace KA\SonataAdminJMSTranslationBundle\Controller;
 
+use Alchemy\Zippy\Zippy;
 use JMS\TranslationBundle\Exception\RuntimeException;
 use JMS\TranslationBundle\Util\FileUtils;
 use JMS\DiExtraBundle\Annotation as DI;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration as ControllerConfiguration;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 
@@ -58,6 +61,8 @@ class TranslateController
      * @ControllerConfiguration\Template
      *
      * @return array
+     * @throws \InvalidArgumentException
+     * @throws \JMS\TranslationBundle\Exception\InvalidArgumentException
      * @throws \JMS\TranslationBundle\Exception\RuntimeException
      */
     public function indexAction(Request $request)
@@ -72,7 +77,9 @@ class TranslateController
         $translationsDir = $this->configFactory->getConfig($config, 'en')->getTranslationsDir();
         $files           = FileUtils::findTranslationFiles($translationsDir);
         if (empty($files)) {
-            throw new RuntimeException('There are no translation files for this config, please run the translation:extract command first.');
+            throw new RuntimeException(
+                'There are no translation files for this config, please run the translation:extract command first.'
+            );
         }
 
         $domains = array_keys($files);
@@ -127,23 +134,24 @@ class TranslateController
         }
 
         return [
-            'selectedConfig'      => $config,
-            'configs'             => $configs,
-            'selectedDomain'      => $domain,
-            'domains'             => $domains,
-            'selectedLocale'      => $locale,
-            'locales'             => $locales,
-            'format'              => $files[$domain][$locale][0],
-            'newMessages'         => $newMessages,
-            'existingMessages'    => $existingMessages,
-            'alternativeMessages' => $alternativeMessages,
-            'isWriteable'         => is_writeable($files[$domain][$locale][1]),
-            'file'                => (string) $files[$domain][$locale][1],
-            'sourceLanguage'      => $this->sourceLanguage,
-            'base_template'       => $this->getBaseTemplate($request),
-            'admin_pool'          => $this->container->get('sonata.admin.pool'),
-            'blocks'              => $this->container->getParameter('sonata.admin.configuration.dashboard_blocks'),
-            'config'              => $this->configFactory->getConfig($config, $locale),
+            'selectedConfig'       => $config,
+            'configs'              => $configs,
+            'selectedDomain'       => $domain,
+            'domains'              => $domains,
+            'selectedLocale'       => $locale,
+            'locales'              => $locales,
+            'format'               => $files[$domain][$locale][0],
+            'newMessages'          => $newMessages,
+            'existingMessages'     => $existingMessages,
+            'alternativeMessages'  => $alternativeMessages,
+            'isWriteable'          => is_writeable($files[$domain][$locale][1]),
+            'file'                 => (string) $files[$domain][$locale][1],
+            'sourceLanguage'       => $this->sourceLanguage,
+            'base_template'        => $this->getBaseTemplate($request),
+            'admin_pool'           => $this->container->get('sonata.admin.pool'),
+            'blocks'               => $this->container->getParameter('sonata.admin.configuration.dashboard_blocks'),
+            'config'               => $this->configFactory->getConfig($config, $locale),
+            'supportedArchFormats' => array_keys($this->getZippy()->getStrategies()),
         ];
     }
 
@@ -173,7 +181,7 @@ class TranslateController
         /** @var \JMS\TranslationBundle\Translation\ConfigBuilder $builder */
         $builder = $this->configFactory->getBuilder($config);
         /** @var \JMS\TranslationBundle\Translation\Config $config */
-        $config = $builder->setLocale('any')->getConfig();
+        $config    = $builder->setLocale('any')->getConfig();
         $directory = $config->getTranslationsDir();
 
         switch ($command) {
@@ -192,7 +200,7 @@ class TranslateController
                 }
                 break;
             case 'reset':
-                $to = trim($request->get('to', ''));
+                $to      = trim($request->get('to', ''));
                 $options = $request->get('options', []);
                 if (!$to) {
                     throw new \InvalidArgumentException('Revision can\'t be empty');
@@ -205,7 +213,7 @@ class TranslateController
                 }
                 break;
             case 'checkout':
-                $branch = trim($request->get('branch', ''));
+                $branch  = trim($request->get('branch', ''));
                 $options = $request->get('options', []);
                 if (!$branch) {
                     throw new \InvalidArgumentException('Branch can\'t be empty');
@@ -218,7 +226,7 @@ class TranslateController
                 }
                 break;
             case 'branch':
-                $branch = trim($request->get('branch', ''));
+                $branch  = trim($request->get('branch', ''));
                 $options = $request->get('options', []);
                 if (!$branch) {
                     throw new \InvalidArgumentException('Branch can\'t be empty');
@@ -254,7 +262,124 @@ class TranslateController
         return new RedirectResponse($request->headers->get('referer'));
     }
 
+    /**
+     * @param Request $request
+     * @param string  $config
+     * @param string  $locale
+     * @param string  $format
+     *
+     * @ControllerConfiguration\Route("/configs/{config}-{locale}.{format}", name="jms_translation_download", options = {"i18n" = false})
+     *
+     * @return RedirectResponse
+     * @throws \RuntimeException
+     * @throws \Symfony\Component\Security\Core\Exception\AccessDeniedException
+     * @throws \InvalidArgumentException
+     */
+    public function downloadAction(Request $request, $config, $locale, $format)
+    {
+        $translationsDir = $this->configFactory->getConfig($config, $locale)->getTranslationsDir();
 
+        $files = FileUtils::findTranslationFiles($translationsDir);
+
+        if (empty($files)) {
+            throw new RuntimeException(
+                'There are no translation files for this config, please run the translation:extract command first.'
+            );
+        }
+
+        $formats = [
+            'zip'     => 'application/zip, application/octet-stream',
+            'tar'     => 'application/x-tar',
+            'tar.gz'  => 'application/x-tar, application/x-tar-gz',
+            'tgz'     => 'application/x-tar, application/x-tar-gz',
+            'tar.bz2' => 'application/x-tar, application/x-bzip2',
+            'tb2'     => 'application/x-tar, application/x-bzip2',
+            'tbz2'    => 'application/x-tar, application/x-bzip2',
+        ];
+
+        if (!array_key_exists($format, $formats)) {
+            throw new RuntimeException('Bad format.');
+        }
+
+        $realFiles = [];
+        foreach ($files as $domain => $locales) {
+            foreach ($locales as $locale => $data) {
+                /** @var \SplFileInfo $splFile */
+                $splFile     = $data[1];
+                $realFiles[] = fopen($splFile->getRealPath(), 'r');
+            }
+        }
+
+        $archName = sprintf('%s-%s.%s', $config, $locale, $format);
+        $archPath = sprintf('%s/%s', sys_get_temp_dir(), $archName);
+
+        $this->getZippy()->create($archPath, $realFiles, true, $format);
+
+        $response = new Response(file_get_contents($archPath), 200);
+        $response->headers->set('Content-Type', $formats[$format]);
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $archName . '"');
+        $response->headers->set('Pragma', "no-cache");
+        $response->headers->set('Expires', "0");
+        $response->headers->set('Content-Transfer-Encoding', "binary");
+        $response->headers->set('Content-Length', filesize($archPath));
+
+        @unlink($archPath);
+
+        return $response;
+    }
+
+    /**
+     * @param Request $request
+     * @param string  $config
+     * @param string  $locale
+     *
+     * @ControllerConfiguration\Route("/configs/{config}locales/{locale}/upload", name="jms_translation_upload", options = {"i18n" = false})
+     *
+     * @return RedirectResponse
+     * @throws \RuntimeException
+     * @throws \Symfony\Component\Security\Core\Exception\AccessDeniedException
+     * @throws \InvalidArgumentException
+     */
+    public function uploadAction(Request $request, $config, $locale)
+    {
+        $translationsDir = $this->configFactory->getConfig($config, $locale)->getTranslationsDir();
+
+        $archive = $request->files->get('archive');
+        if (!$archive instanceof UploadedFile) {
+            throw new RuntimeException('Bad file.');
+        }
+
+        $manager = $this->getGitManager();
+        if ($manager->isEnabled() && $manager->gitInitialized($translationsDir) && $request->get('create_new_branch')) {
+            $branchName = sprintf('upload_file_%s', date('Y_m_d_h_i'));
+            $manager->branch($translationsDir, $branchName);
+            $manager->checkout($translationsDir, $branchName);
+        }
+
+        $archivePath = $archive->getRealPath().'.'.$archive->getClientOriginalName();
+        move_uploaded_file($archive->getRealPath(), $archivePath);
+
+        $archive = $this->getZippy()->open($archivePath);
+        foreach ($archive->getMembers() as $member) {
+            /** @var \Alchemy\Zippy\Archive\Member $member */
+
+            $extractTo = $translationsDir . DIRECTORY_SEPARATOR . $member->getLocation();
+            if (file_exists($extractTo)) {
+                unlink($extractTo);
+            }
+            $member->extract($translationsDir);
+        }
+
+        return new RedirectResponse($request->headers->get('referer'));
+    }
+
+    /**
+     * @return Zippy
+     */
+    protected function getZippy()
+    {
+        return Zippy::load();
+    }
 
     /**
      * @param Request $request

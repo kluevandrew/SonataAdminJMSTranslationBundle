@@ -18,7 +18,8 @@
         "jms/translation-bundle": "dev-master",
         "jms/di-extra-bundle": "dev-master",
         "sonata-project/admin-bundle": "2.3.*@dev",
-        "sensio/framework-extra-bundle": "~3.0"
+        "sensio/framework-extra-bundle": "~3.0",
+        "alchemy/zippy": "dev-master"
     },
     "conflict": {
         "twig/twig": "1.10.2"
