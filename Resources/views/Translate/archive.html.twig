@@ -1,0 +1,49 @@
+{#
+ # Created by PhpStorm.
+ # User: andrew
+ # Date: 11.04.14
+ # Time: 13:24
+ # Author: Kluev Andrew
+ # Contact: Kluev.Andrew@gmail.com
+ #}
+{% if supportedArchFormats|length %}
+<div class="panel-footer">
+    <div class="row">
+        <div class="col-md-6">
+            <p>{{ 'Download'|trans }} {{ selectedConfig }} {{ selectedLocale }} {% if ka_is_git_available() and ka_is_git_initialized(currentDir) %}({{ ka_is_git_current_branch(currentDir) }}){% endif %}</p>
+
+            <div class="btn-group">
+                {% for format in supportedArchFormats %}
+                    <a data-download class="btn btn-default"
+                       href="{{ path('jms_translation_index', {'config': selectedConfig, 'archive': format }) }}">{{ 'Download as'|trans }} {{ format }}</a>
+                {% endfor %}
+            </div>
+
+            {% if downloadError %}
+            <div class="alert alert-danger">{{ downloadError|trans }}</div>
+            {% endif %}
+        </div>
+        {% if isWriteable is sameas(true) %}
+        <div class="col-md-6">
+            <p>{{ 'Upload'|trans }}</p>
+            <form method="POST" enctype="multipart/form-data" class="form"
+                  action="{{ path('jms_translation_upload', {'config': selectedConfig, 'locale': selectedLocale }) }}">
+                <div class="form-group">
+                    <label for="archive">{{ 'Archive'|trans }}</label>
+                    <input required="required" class="form-control" type="file" name="archive"/>
+                </div>
+                {% if ka_is_git_available() and ka_is_git_initialized(currentDir) and not ka_git_status(currentDir, {0: '-s'}, true)|length %}
+                    <div class="form-group">
+                        <label for="">
+                            <input type="checkbox" name="create_new_branch"/>
+                            {{ 'Into new branch'|trans }}
+                        </label>
+                    </div>
+                {% endif %}
+                <input type="submit" value="{{ 'Upload'|trans }}"/>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

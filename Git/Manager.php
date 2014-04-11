@@ -9,8 +9,9 @@
  */
 namespace KA\SonataAdminJMSTranslationBundle\Git;
 
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
 use Symfony\Component\Security\Core\SecurityContextInterface;
-use FOS\UserBundle\Model\UserInterface as FOSUserInterface;
 
 /**
  * Class KA\SonataAdminJMSTranslationBundle\Git\Manager
@@ -40,11 +41,11 @@ class Manager
      */
     public function isEnabled()
     {
-        if (function_exists('exec')) {
-            exec('git --version', $gitVersion, $returnVar);
-            if ($returnVar === 0) {
-                return true;
-            }
+        try {
+            $this->version();
+
+            return true;
+        } catch (ProcessFailedException $e) {
         }
 
         return false;
@@ -52,73 +53,70 @@ class Manager
 
     /**
      * @return string
+     * @throws \Symfony\Component\Process\Exception\ProcessFailedException
      */
-    public function gitVersion()
+    public function version()
     {
-        exec('git --version', $gitVersion);
-
-        return $gitVersion[0];
+        return $this->exec('git --version');
     }
 
     /**
      * @param string $directory
      *
-     * @return bool
+     * @return string
+     * @throws \Symfony\Component\Process\Exception\ProcessFailedException
      */
     public function gitInitialized($directory)
     {
-        $this->execInDir($directory, 'cat .git/config', $cat, $returnVar);
-
-        return $returnVar === 0;
+        return $this->exec('cat .git/config', $directory);
     }
 
     /**
      * @param string $directory
      *
-     * @return bool
+     * @return string
+     * @throws \Symfony\Component\Process\Exception\ProcessFailedException
      */
     public function init($directory)
     {
-        $this->execInDir($directory, 'git init', $gitInit, $returnVar);
-        if ($returnVar == 0) {
-            $this->execInDir($directory, ' git add -A && git commit -m "Initial commit"', $gitCommit, $returnVar);
-            if ($returnVar == 0) {
-                return true;
-            }
-        }
+        $this->exec('git init', $directory);
 
-        return false;
+        return $this->commit($directory, 'Initial commit');
     }
 
     /**
      * @param string $directory
      * @param string $message
      *
-     * @return bool
+     * @return string
+     * @throws \Symfony\Component\Process\Exception\ProcessFailedException
+     * @throws \InvalidArgumentException
      */
     public function commit($directory, $message)
     {
-        $command = sprintf('git add -A && git commit -m "%s"', $message);
+        if (!$message) {
+            throw new \InvalidArgumentException('Message can\'t be empty');
+        }
 
-        $token = $this->securityContext->getToken();
+        $this->exec('git add -A', $directory);
+
+        $command = sprintf('git add -A && git commit -m "%s"', $message);
+        $token   = $this->securityContext->getToken();
         if ($token && $token->getUser()) {
             $user        = $token->getUser();
             $authorName  = (string) $user;
             $authorEmail = 'unknown@e.mail';
-            if (interface_exists('FOS\UserBundle\Model\UserInterface') and $user instanceof FOSUserInterface) {
+            if (interface_exists('\FOS\UserBundle\Model\UserInterface')
+                and
+                $user instanceof \FOS\UserBundle\Model\UserInterface
+            ) {
                 $authorEmail = $user->getEmail();
             }
 
             $command .= sprintf(' --author="%s <%s>"', $authorName, $authorEmail);
         }
 
-        $this->execInDir($directory, $command, $gitCommit, $returnVar);
-
-        if ($returnVar == 0) {
-            return true;
-        }
-
-        return false;
+        return $this->exec($command, $directory);
     }
 
     /**
@@ -126,13 +124,15 @@ class Manager
      * @param array  $options
      * @param bool   $returnAsArray
      *
-     * @return string|array
+     * @return array|string
+     * @throws \Symfony\Component\Process\Exception\ProcessFailedException
      */
     public function status($directory, array $options = [], $returnAsArray = true)
     {
-        $this->execInDir($directory, sprintf('git status %s', implode(' ', $options)), $status, $returnVar);
+        $command = sprintf('git status %s', implode(' ', $options));
+        $result  = $this->exec($command, $directory, $array);
 
-        return $returnAsArray ? $status : implode(PHP_EOL, $status);
+        return $returnAsArray ? $array : $result;
     }
 
     /**
@@ -140,16 +140,22 @@ class Manager
      * @param string $branch
      * @param array  $options
      * @param bool   $returnAsArray
-     * @param int    &$returnVar
      *
-     * @return string|array
+     * @return array|string
+     * @throws \Symfony\Component\Process\Exception\ProcessFailedException
+     * @throws \InvalidArgumentException
      */
-    public function branch($directory, $branch = '', array $options = [], $returnAsArray = true, &$returnVar = 0)
+    public function branch($directory, $branch = '', array $options = [], $returnAsArray = true)
     {
-        $command = sprintf('git branch %s %s', $branch, implode(' ', $options));
-        $this->execInDir($directory, $command, $result, $returnVar);
+        if (preg_match('/[^a-z_\-0-9]/usi', $branch)) {
+            throw new \InvalidArgumentException('Bad branch name');
+        }
 
-        return $returnAsArray ? $result : implode(PHP_EOL, $result);
+        $command = sprintf('git branch %s %s', $branch, implode(' ', $options));
+
+        $result = $this->exec($command, $directory, $array);
+
+        return $returnAsArray ? $array : $result;
     }
 
     /**
@@ -174,15 +180,21 @@ class Manager
      * @param string $to
      * @param array  $options
      *
-     * @return bool
+     * @return string
+     * @throws \Symfony\Component\Process\Exception\ProcessFailedException
+     * @throws \InvalidArgumentException
      */
     public function reset($directory, $to, array $options = [])
     {
-        $this->execInDir($directory, sprintf('git reset %s %s', $to, implode(' ', $options)), $result, $returnVar);
+        if (!$to) {
+            throw new \InvalidArgumentException('Revision can\'t be empty');
+        }
+
+        $command = sprintf('git reset %s %s', $to, implode(' ', $options));
 
         $this->resetCache();
 
-        return $returnVar === 0;
+        return $this->exec($command, $directory);
     }
 
     /**
@@ -190,20 +202,21 @@ class Manager
      * @param string $branch
      * @param array  $options
      *
-     * @return bool
+     * @return string
+     * @throws \Symfony\Component\Process\Exception\ProcessFailedException
+     * @throws \InvalidArgumentException
      */
     public function checkout($directory, $branch, array $options = [])
     {
-        $this->execInDir(
-            $directory,
-            sprintf('git checkout %s %s', $branch, implode(' ', $options)),
-            $result,
-            $returnVar
-        );
+        if (!$branch) {
+            throw new \InvalidArgumentException('Branch can\'t be empty');
+        }
+
+        $command = sprintf('git checkout %s %s', $branch, implode(' ', $options));
 
         $this->resetCache();
 
-        return $returnVar === 0;
+        return $this->exec($command, $directory);
     }
 
     /**
@@ -217,11 +230,13 @@ class Manager
         if (!$this->hasCache($cacheKey)) {
             $result        = $this->branch($directory, '', ['--list'], true);
             $currentBranch = '';
-            foreach ($result as &$branchRow) {
-                $branchRow = trim(str_replace('*', '', $branchRow, $count));
-                if ($count) {
-                    $currentBranch = $branchRow;
-                    break;
+            if ($result) {
+                foreach ($result as &$branchRow) {
+                    $branchRow = trim(str_replace('*', '', $branchRow, $count));
+                    if ($count) {
+                        $currentBranch = $branchRow;
+                        break;
+                    }
                 }
             }
             $this->setCache($cacheKey, $currentBranch);
@@ -238,23 +253,22 @@ class Manager
      */
     public function history($directory)
     {
-        $this->execInDir($directory, 'git log --pretty=oneline', $output, $returnVal);
+        $result = $this->exec('git log --pretty=oneline', $directory);
+
+        $lines = explode(PHP_EOL, $result);
 
         $history = [];
-        if ($returnVal === 0) {
-            foreach ($output as $line) {
-                preg_match('/^(.*?)\s(.*?)$/usi', $line, $matches);
-                if (count($matches) === 3) {
-                    $hash           = $matches[1];
-                    $message        = $matches[2];
-                    $history[$hash] = $message;
-                }
-            }
 
-            return $history;
+        foreach ($lines as $line) {
+            preg_match('/^(.*?)\s(.*?)$/usi', $line, $matches);
+            if (count($matches) === 3) {
+                $hash           = $matches[1];
+                $message        = $matches[2];
+                $history[$hash] = $message;
+            }
         }
 
-        throw new \Exception();
+        return $history;
     }
 
     /**
@@ -264,8 +278,8 @@ class Manager
      * @param array  $options
      * @param bool   $returnAsArray
      *
-     * @return string|array
-     * @throws \Exception
+     * @return array|string
+     * @throws \Symfony\Component\Process\Exception\ProcessFailedException
      */
     public function diff($directory, $revision1, $revision2, array $options = [], $returnAsArray = true)
     {
@@ -276,14 +290,11 @@ class Manager
             ];
         }
 
-        $command = sprintf('git diff %s %s %s', implode(' ', $options), $revision1, $revision2);
-        $this->execInDir($directory, $command, $output, $returnVal);
+        $command = sprintf('git log %s %s..%s', implode(' ', $options), $revision1, $revision2);
 
-        if ($returnVal === 0) {
-            return $returnAsArray ? $output : implode(PHP_EOL, $output);
-        }
+        $result = $this->exec($command, $directory, $array);
 
-        return $returnAsArray ? [] : '';
+        return $returnAsArray ? $array : $result;
     }
 
     /**
@@ -292,73 +303,51 @@ class Manager
      * @param string $revision2
      * @param array  $options
      *
-     * @return bool
-     * @throws \Exception
+     * @return string
+     * @throws \Symfony\Component\Process\Exception\ProcessFailedException
+     * @throws \InvalidArgumentException
      */
     public function merge($directory, $revision1, $revision2, array $options = [])
     {
-        $options[] = sprintf('-m "Merge %s into %s"', $revision2, $revision1);
-        $command   = sprintf('git merge %s %s %s', implode(' ', $options), $revision1, $revision2);
-        $this->execInDir($directory, $command, $output, $returnVal);
-
-        return $returnVal === 0;
-    }
-
-    /**
-     * @param string $directory
-     * @param string $address
-     * @param string $password
-     * @param array  $options
-     *
-     * @return bool
-     */
-    public function push($directory, $address, $password, array $options = [])
-    {
-        $command   = sprintf('git push %s %s %s', implode(' ', $options), $address, $this->branchCurrent($directory));
-
-        $descriptorSpec = [
-            0 => ["pipe", "r"],
-            1 => ["pipe", "w"],
-            2 => ["pipe", "w"],
-        ];
-
-        $process = proc_open($command, $descriptorSpec, $pipes, $directory);
-        if (is_resource($process)) {
-
-            fwrite($pipes[0], $password);
-
-            $stdin = stream_get_contents($pipes[0]);
-            $stdout = stream_get_contents($pipes[1]);
-            $stderr = stream_get_contents($pipes[2]);
-
-            var_dump($password,$stdin, $stdout, $stderr);
-
-            foreach ($pipes as $pipe) {
-                fclose($pipe);
-            }
-
-            $status = trim(proc_close($process));
-            if ($status) {
-                throw new \Exception($stderr);
-            }
-
-            return $stdout;
+        if (!$revision1 || !$revision2) {
+            throw new \InvalidArgumentException('Revisions can\'t be empty');
+        }
+        if ($revision1 === $revision2) {
+            throw new \InvalidArgumentException('Can\'t merge same revisions');
+        }
+        if (!$this->diff($directory, $revision1, $revision2)) {
+            throw new \InvalidArgumentException('Already merged');
         }
 
-        throw new \Exception();
+        $options[] = sprintf('-m "Merge %s into %s"', $revision2, $revision1);
+        $command   = sprintf('git merge %s %s %s', implode(' ', $options), $revision1, $revision2);
+
+        return $this->exec($command, $directory);
     }
 
     /**
-     * @param string $directory
      * @param string $command
-     * @param array  &$output
-     * @param int    &$returnVar
+     * @param string $directory
+     * @param array  &$arrayResult
+     *
+     * @return string
+     * @throws \Symfony\Component\Process\Exception\LogicException
+     * @throws \Symfony\Component\Process\Exception\ProcessFailedException
      */
-    protected function execInDir($directory, $command, &$output, &$returnVar)
+    protected function exec($command, $directory = null, &$arrayResult = [])
     {
-        $command = sprintf('%s && %s', $this->cd($directory), $command);
+        $process = new Process($command, $directory);
+        $process->run();
 
-        exec($command, $output, $returnVar);
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
+
+        $result = trim($process->getOutput());
+
+        $result ? $arrayResult = explode(PHP_EOL, $result) : [];
+
+        return $result;
     }
 
     /**

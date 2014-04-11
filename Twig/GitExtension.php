@@ -44,7 +44,7 @@ class GitExtension extends \Twig_Extension
     {
         return [
             new \Twig_SimpleFunction('ka_is_git_available', [$this->manger, 'isEnabled']),
-            new \Twig_SimpleFunction('ka_is_git_version', [$this->manger, 'gitVersion']),
+            new \Twig_SimpleFunction('ka_is_git_version', [$this->manger, 'version']),
             new \Twig_SimpleFunction('ka_is_git_initialized', [$this->manger, 'gitInitialized']),
             new \Twig_SimpleFunction(
                 'ka_git_status',

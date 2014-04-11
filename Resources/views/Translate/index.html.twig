@@ -1,168 +1,23 @@
 {% extends base_template %}
 
-{% set currentDir = config.getTranslationsDir %}
-
 {% block stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" type="text/css" media="screen" href="{{ asset("bundles/jmstranslation/css/layout.css") }}"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ asset("bundles/kasonataadminjmstranslation/css/kasonataadminjmstranslation.css") }}"/>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
-
+    <script src="{{ asset("bundles/kasonataadminjmstranslation/js/kasonataadminjmstranslation.js") }}"></script>
     <script language="javascript" type="text/javascript">
-        $(document).ready(function () {
-            var updateMessagePath = {{ path("jms_translation_update_message", {"config": selectedConfig, "domain": selectedDomain, "locale": selectedLocale})|json_encode|raw }};
-
-            $('#config select').change(function () {
-                $(this).closest('form').submit();
-            });
-
-            {% if isWriteable is sameas(true) %}
-            $('#addTranslation').on('click', function (e) {
-                e.preventDefault();
-                var form = $(this).closest('form');
-                $.ajax({
-                    type: 'POST',
-                    headers: {'X-HTTP-METHOD-OVERRIDE': 'PUT'},
-                    url: form.attr('action'),
-                    data: {
-                        '_method': 'PUT',
-                        'message': form.find('#newTranslationMessage').val(),
-                        'id': form.find('#newTranslationId').val()
-                    },
-                    beforeSend: function () {
-                        form.children('.alert-message').remove();
-                    },
-                    error: function () {
-                        form.append('<span class="label label-important alert-message">Could not be saved.</span>');
-                    },
-                    success: function () {
-                        form.append('<span class="label label-success alert-message">Translation was saved.</span>');
-                    },
-                    complete: function () {
-                        $(self).data('timeoutId', setTimeout(function () {
-                            $(self).data('timeoutId', undefined);
-                            form.children('.alert-message').fadeOut(300, function () {
-                                $(this).remove();
-                            });
-                        }, 10000));
-                    }
-                })
-            });
-
-            $('#clearCache').on('click', function (e) {
-                e.preventDefault();
-                var btn = $(this);
-                $.ajax({
-                    type: 'POST',
-                    url: $(this).attr('href'),
-                    data: {
-                        '_method': 'POST'
-                    },
-                    beforeSend: function () {
-                        btn.parent().children('.alert-message').remove();
-                    },
-                    error: function () {
-                        btn.parent().append('<span class="label label-important alert-message">Cache NOT cleared.</span>');
-                    },
-                    success: function () {
-                        btn.parent().append('<span class="label label-success alert-message">Cache cleared.</span>');
-                    },
-                    complete: function () {
-                        $(self).data('timeoutId', setTimeout(function () {
-                            $(self).data('timeoutId', undefined);
-                            $(this).parent().children('.alert-message').fadeOut(300, function () {
-                                $(this).remove();
-                            });
-                        }, 10000));
-                    }
-                })
-            });
-
-            $('[data-transaltions-container] textarea')
-                    .blur(function () {
-                        var self = this;
-                        $.ajax(updateMessagePath + '?id=' + encodeURIComponent($(this).data('id')), {
-                            type: 'POST',
-                            headers: {'X-HTTP-METHOD-OVERRIDE': 'PUT'},
-                            data: {'_method': 'PUT', 'message': $(this).val()},
-                            beforeSend: function () {
-                                $(self).parent().closest('td').prev('td').children('.alert-message').remove();
-                            },
-                            error: function () {
-                                $(self).parent().closest('td').prev('td').append('<span class="label label-important alert-message">Could not be saved.</span>');
-                            },
-                            success: function () {
-                                $(self).parent().closest('td').prev('td').append('<span class="label label-success alert-message">Translation was saved.</span>');
-                            },
-                            complete: function () {
-                                var parent = $(self).parent();
-                                $(self).data('timeoutId', setTimeout(function () {
-                                    $(self).data('timeoutId', undefined);
-                                    parent.closest('td').prev('td').children('.alert-message').fadeOut(300, function () {
-                                        $(this).remove();
-                                    });
-                                }, 10000));
-                            }
-                        });
-                    })
-                    .focus(function (e) {
-                        e.preventDefault();
-                        this.select();
-
-                        var timeoutId = $(this).data('timeoutId');
-                        if (timeoutId) {
-                            clearTimeout(timeoutId);
-                            $(this).data('timeoutId', undefined);
-                        }
-
-                        $(this).parent().children('.alert-message').remove();
-                    }).mouseup(function (e) {
-                        e.preventDefault();
-                    }).keyup(function (e) {
-                        if (e.keyCode == 9) {
-                            //Tab key
-                            e.preventDefault();
-                            this.select();
-                        }
-                    });
-
-            $('.remove_translation').on('click', function (e) {
-                e.preventDefault();
-                var btn = $(this);
-                var confirmed = confirm('{{ 'Are you sure you want to delete this translation?'|trans }}');
-                if (confirmed == true) {
-                    $.ajax({
-                        type: 'POST',
-                        url: $(this).attr('href'),
-                        data: {
-                            '_method': 'POST',
-                            'id': btn.data('id')
-                        },
-                        beforeSend: function () {
-                            btn.parent().children('.alert-message').remove();
-                        },
-                        error: function () {
-                            btn.parent().append('<span class="label label-important alert-message">Not removed</span>');
-                        },
-                        success: function () {
-                            btn.closest('.translation-row').fadeOut('slow', function () {
-                                $(this).remove();
-                            });
-                        }
-                    })
-                }
-            });
-
-            {% endif %}
-
-            $('.show_spoiler').on('click', function (e) {
-                e.preventDefault();
-                var block = $(this).closest('.spoiler_block');
-                var target = block.find('.spoiler');
-                target.slideToggle();
-            });
+        $(function () {
+            addKaSonataAdminEventListeners(
+                    {{ path("jms_translation_update_message", {"config": selectedConfig, "domain": selectedDomain, "locale": selectedLocale})|json_encode|raw }},
+                    {{ isWriteable is sameas(true) }},
+                    {{ is_granted('ROLE_SUPER_ADMIN') and ka_is_git_available() }},
+                    {{ is_granted('ROLE_SUPER_ADMIN') and ka_is_git_available() and ka_is_git_initialized(currentDir) }},
+                    {{ path('ka_sonataadminjmstranslation_translate_git_info', {"config": selectedConfig })|json_encode|raw }}
+            );
         });
     </script>
 {% endblock %}
@@ -172,7 +27,6 @@
         <div class="col-md-{% if isWriteable is sameas(true) %}10{% else %}12{% endif %}">
             <div data-transaltions-container class="panel panel-default">
                 <div class="panel-heading">{{ 'Translation filter'|trans }}</div>
-
                 <form id="config" class="form-inline panel-body sonata-no-margin" role="form"
                       action="{{ path("jms_translation_index") }}" method="get">
 
@@ -204,37 +58,7 @@
                         </select>
                     </div>
                 </form>
-
-                <div class="panel-footer">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p>{{ 'Download'|trans }} {{ selectedConfig }} {{ selectedLocale }} {% if ka_is_git_available() and ka_is_git_initialized(currentDir) %}({{ ka_is_git_current_branch(currentDir) }}){% endif %}</p>
-                            <div class="btn-group">
-                                {% for format in supportedArchFormats %}
-                                <a class="btn btn-default" href="{{ path('jms_translation_download', {'config': selectedConfig, 'locale': selectedLocale , 'format': format }) }}">{{ 'Download as'|trans }} {{ format }}</a>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <p>{{ 'Upload'|trans }}</p>
-                            <form method="POST" enctype="multipart/form-data" class="form" action="{{ path('jms_translation_upload', {'config': selectedConfig, 'locale': selectedLocale }) }}">
-                                <div class="form-group">
-                                    <label for="archive">{{ 'Archive'|trans }}</label>
-                                    <input required="required" class="form-control" type="file" name="archive"/>
-                                </div>
-                                {% if ka_is_git_available() and ka_is_git_initialized(currentDir) and not ka_git_status(currentDir, {0: '-s'}, true)|length %}
-                                <div class="form-group">
-                                    <label for="">
-                                        <input type="checkbox" name="create_new_branch"/>
-                                        {{ 'Into new branch'|trans }}
-                                    </label>
-                                </div>
-                                {% endif %}
-                                <input type="submit" value="{{ 'Upload'|trans }}"/>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+                {% include "KASonataAdminJMSTranslationBundle:Translate:archive.html.twig" %}
             </div>
         </div>
         {% if isWriteable is sameas(true) %}
@@ -335,120 +159,9 @@
                 </form>
             </div>
 
-            {% if is_granted('ROLE_SUPER_ADMIN') and ka_is_git_available() %}
-                <div class="panel panel-default">
-                    <div class="panel-heading">GIT: {{ ka_is_git_version() }}</div>
-                    <div class="panel-body">
-                        {% if ka_is_git_initialized(currentDir) %}
-
-                            {% set modified_files = ka_git_status(currentDir, {0: '-s'}, true) %}
-                            {% set currentBranch = ka_is_git_current_branch(currentDir) %}
-
-                            <div class="panel panel-default">
-                                <div class="panel-heading">{{ 'Modified files'|trans }} ({{ currentBranch }})</div>
-                                <div class="panel-body">
-                                    {% if modified_files|length %}
-                                        <ol>
-                                            {% for line in modified_files %}
-                                                <li>{{ line }}</li>
-                                            {% endfor %}
-                                        </ol>
-                                    {% else %}
-                                        <p>{{ 'Working directory clean'|trans }}</p>
-                                    {% endif %}
-                                </div>
-                                {% if modified_files|length %}
-                                    <div class="panel-footer">
-                                        <form class="form"
-                                              action="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'commit'}) }}">
-                                            <div class="form-group">
-                                                <label for="commit_message">{{ 'Message' }}</label>
-                                                <textarea class="form-control" name="commit_message" id="commit_message"
-                                                          cols="30" rows="3"></textarea>
-                                            </div>
-                                            <input type="submit" class="btn btn-warning btn-xs"
-                                                   value="{{ 'Commit'|trans }}"/>
-                                            <a href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'reset', 'to': 'HEAD', 'options': {0: '--hard'} }) }}" class="btn btn-xs btn-danger">{{ 'Reset'|trans }}</a>
-                                        </form>
-                                    </div>
-                                {% endif %}
-                            </div>
-
-                            {% set branches = ka_git_branch_list(currentDir) %}
-                            <div class="panel panel-default">
-                                <div class="panel-heading">{{ 'Branches'|trans }}</div>
-                                    <table class="table">
-                                        {% for branch in branches %}
-                                        <tr>
-                                            <td {% if currentBranch == branch %}class="text-success" colspan="2"{% endif %}>
-                                                {% if not modified_files|length and currentBranch != branch %}
-                                                <a title="{{ 'Checkout'|trans }}" href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'checkout', 'branch': branch}) }}"
-                                                        >{{ branch }}</a>
-                                                {% else %}
-                                                    {{ branch }}
-                                                {% endif %}
-                                            </td>
-                                            {% if currentBranch != branch %}
-                                                <td class="text-right">
-                                                    {% if modified_files|length %}
-                                                        <button disabled class="btn btn-xs btn-default">{{ 'checkout'|trans }}</button>
-                                                    {% else %}
-                                                        <a href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'checkout', 'branch': branch}) }}" class="btn btn-xs btn-success">{{ 'Checkout'|trans }}</a>
-                                                    {% endif %}
-                                                    {% if ka_is_git_diff(currentDir, currentBranch, branch) %}
-                                                        <a href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'merge', 'revision1': currentBranch, 'revision2': branch }) }}" class="btn btn-xs btn-warning">{{ 'Merge'|trans }}</a>
-                                                    {% endif %}
-                                                    <a href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'branch', 'branch': branch, 'options': {0: '-D'} }) }}" class="btn btn-xs btn-danger">{{ 'Remove'|trans }}</a>
-                                                </td>
-                                            {% endif %}
-                                        </tr>
-                                        {% endfor %}
-                                        <tr>
-                                            <td colspan="2">
-                                                <div class="spoiler_block">
-                                                    <div>
-                                                        <a class="show_spoiler btn btn-info btn-xs" href="#">{{ 'Create branch'|trans }}</a>
-                                                    </div>
-                                                    <form class="form spoiler"  style="display: none;" action="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'branch' }) }}">
-                                                        <div class="form-group">
-                                                            <label for="branch_name">{{ 'Branch name'|trans }}</label>
-                                                            <input class="form-control" type="text" id="branch_name" name="branch"/>
-                                                        </div>
-                                                        <input type="submit" class="btn btn-primary btn-xs" value="{{ 'Create' }}"/>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </table>
-                            </div>
-
-                            {% set history = ka_is_git_history(currentDir) %}
-                            <div class="panel panel-danger">
-                                <div class="panel-heading">{{ 'Rollback'|trans }} ({{ currentBranch }})</div>
-                                <form class="form form-inline panel-body"
-                                      action="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'reset' }) }}"
-                                        >
-                                    <input type="hidden" name="options[]" value="--hard"/>
-                                    <div class="form-group">
-                                        <label for="revision">{{ 'Revision'|trans }}</label>
-                                        <select name="to" id="revision">
-                                            {% for hash, text in history %}
-                                                <option value="{{ hash }}">{{ text }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <input type="submit" class="btn btn-danger btn-xs" value="{{ 'Reset'|trans }}"/>
-                                </form>
-                            </div>
-                        {% else %}
-                            <p>{{ 'Git repository not initialized'|trans }}</p>
-                            <a class="btn btn-primary"
-                               href="{{ path('jms_translation_git_exec', {'config': selectedConfig, 'command': 'init' }) }}"
-                                    >{{ 'Initialize git repository'|trans }}</a>
-                        {% endif %}
-                    </div>
-                </div>
-            {% endif %}
+            <div class="git" data-git>
+                {% include "KASonataAdminJMSTranslationBundle:Translate:git.html.twig" %}
+            </div>
         </div>
     </div>
 {% endblock %}
