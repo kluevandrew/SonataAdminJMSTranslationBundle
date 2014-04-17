@@ -68,7 +68,12 @@ class Manager
      */
     public function gitInitialized($directory)
     {
-        return $this->exec('cat .git/config', $directory);
+        try {
+            return $this->exec('cat .git/config', $directory);
+        } catch (ProcessFailedException $e) {
+        }
+
+        return false;
     }
 
     /**
