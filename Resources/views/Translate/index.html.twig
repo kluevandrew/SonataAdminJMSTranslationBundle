@@ -13,9 +13,9 @@
         $(function () {
             addKaSonataAdminEventListeners(
                     {{ path("jms_translation_update_message", {"config": selectedConfig, "domain": selectedDomain, "locale": selectedLocale})|json_encode|raw }},
-                    {{ isWriteable is sameas(true) }},
-                    {{ is_granted('ROLE_SUPER_ADMIN') and ka_is_git_available() }},
-                    {{ is_granted('ROLE_SUPER_ADMIN') and ka_is_git_available() and ka_is_git_initialized(currentDir) }},
+                    {{ isWriteable is sameas(true) ? 1 : 0 }},
+                    {{ (is_granted('ROLE_SUPER_ADMIN') and ka_is_git_available()) ? 1 : 0 }},
+                    {{ (is_granted('ROLE_SUPER_ADMIN') and ka_is_git_available() and ka_is_git_initialized(currentDir)) ? 1 : 0 }},
                     {{ path('ka_sonataadminjmstranslation_translate_git_info', {"config": selectedConfig })|json_encode|raw }}
             );
         });
